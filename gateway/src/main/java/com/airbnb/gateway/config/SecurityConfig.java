@@ -34,7 +34,8 @@ public class SecurityConfig {
                                         "/users/v1/auth/get-tokens",
                                         "/oauth2/**",
                                         "/login/oauth2/**",
-                                        "/properties/v1/properties/public/**"
+                                        "/properties/v1/properties/public/**",
+                                        "/actuator/**"
                                 ).permitAll()
                                 .anyRequest().authenticated()
                 )

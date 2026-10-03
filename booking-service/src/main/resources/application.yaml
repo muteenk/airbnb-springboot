@@ -21,5 +21,67 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
+resilience4j:
+  circuitbreaker:
+    circuitBreakerAspectOrder: 1
+    instances:
+      propertyService:
+        slidingWindowSize: 10 # max tries before opening the circuit
+        minimumNumberOfCalls: 5 # min tries before we open the circuit
+        failureRateThreshold: 50 # after 50% failures, we'll open the circuit
+        waitDurationInOpenState: 10s  # wait duration after open state
+        permittedNumberOfCallsInHalfOpenState: 3
+        ignoreExceptions:
+          - com.airbnb.booking_service.exceptions.ResourceDoesNotExist
+      paymentService:
+        slidingWindowSize: 10 # max tries before opening the circuit
+        minimumNumberOfCalls: 5 # min tries before we open the circuit
+        failureRateThreshold: 50 # after 50% failures, we'll open the circuit
+        waitDurationInOpenState: 10s  # wait duration after open state
+        permittedNumberOfCallsInHalfOpenState: 3
+
+  retry:
+    circuitBreakerAspectOrder: 2
+    instances:
+      propertyService:
+        maxAttempts: 3  # max number of retries
+        waitDuration: 500ms # Base wait duration
+        enableExponentialBackoff: true  # Do you want to increase the wait time exponential on each retry
+        exponentialBackoffMultiplier: 2
+        ignoreExceptions:
+          - com.airbnb.booking_service.exceptions.ResourceDoesNotExist
+        retryExceptions:
+          - feign.FeignException
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+      paymentService:
+        maxAttempts: 3  # max number of retries
+        waitDuration: 500ms # Base wait duration
+        enableExponentialBackoff: true  # Do you want to increase the wait time exponential on each retry
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - feign.FeignException
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+logging:
+  file:
+    name: logs/booking-service.log
+  level:
+    root: INFO
+    com.airbnb.booking_service: INFO
+
 server:
   port: 8083

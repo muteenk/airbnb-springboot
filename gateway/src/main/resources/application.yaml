@@ -51,3 +51,22 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+logging:
+  file:
+    name: logs/gateway.log
+  level:
+    root: INFO
+    com.airbnb.gateway: INFO

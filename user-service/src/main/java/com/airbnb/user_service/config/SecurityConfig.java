@@ -36,7 +36,8 @@ public class SecurityConfig {
                                     "/v1/auth/refresh-token",
                                     "/v1/auth/error",
                                     "/oauth2/**",
-                                    "/login/oauth2/**"
+                                    "/login/oauth2/**",
+                                    "/actuator/**"
                             ).permitAll()
                             .anyRequest().authenticated()
                 )

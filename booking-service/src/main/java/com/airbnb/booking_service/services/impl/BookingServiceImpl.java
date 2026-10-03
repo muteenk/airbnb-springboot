@@ -15,6 +15,8 @@ import com.airbnb.booking_service.payloads.ApiResponse;
 import com.airbnb.booking_service.repositories.BookingRepository;
 import com.airbnb.booking_service.repositories.UnitBookingLockRepository;
 import com.airbnb.booking_service.services.BookingService;
+import com.airbnb.booking_service.services.PaymentRemoteService;
+import com.airbnb.booking_service.services.PropertyRemoteService;
 import feign.FeignException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +30,8 @@ public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
     private final UnitBookingLockRepository unitBookingLockRepository;
-    private final PropertyClient propertyClient;
-    private final PaymentClient paymentClient;
+    private final PaymentRemoteService paymentRemoteService;
+    private final PropertyRemoteService propertyRemoteService;
 
     @Override
     @Transactional
@@ -38,7 +40,7 @@ public class BookingServiceImpl implements BookingService {
             throw new ApiException("bookingTo must be after bookingFrom", HttpStatus.BAD_REQUEST);
         }
 
-        verifyUnitExists(bookingRequest.unitId());
+        propertyRemoteService.verifyUnitExists(bookingRequest.unitId());
 
         acquireUnitLock(bookingRequest.unitId());
 
@@ -60,22 +62,9 @@ public class BookingServiceImpl implements BookingService {
 
         booking = bookingRepository.save(booking);
 
-        String transactionId = chargePayment(userId, booking);
+        String transactionId = paymentRemoteService.chargePayment(userId, booking);
 
         return new BookingResponse(booking.getId(), transactionId);
-    }
-
-    private void verifyUnitExists(Long unitId) {
-        try {
-            propertyClient.getUnit(unitId);
-        } catch (FeignException.NotFound ex) {
-            throw new ResourceDoesNotExist("Unit doesn't exist");
-        } catch (FeignException ex) {
-            throw new ApiException(
-                    "Unable to verify the unit details with property service",
-                    HttpStatus.BAD_GATEWAY
-            );
-        }
     }
 
     private void acquireUnitLock(Long unitId) {
@@ -95,18 +84,4 @@ public class BookingServiceImpl implements BookingService {
         );
     }
 
-    private String chargePayment(Long userId, Booking booking) {
-        try {
-            ApiResponse<PaymentResponse> response = paymentClient.createPaymentRecord(
-                    new PaymentRequestBody(booking.getId(), userId, booking.getAmount())
-            );
-
-            if (response.getData() == null || response.getData().transactionId() == null) {
-                throw new ApiException("Payment Service returned empty response", HttpStatus.BAD_GATEWAY);
-            }
-            return response.getData().transactionId();
-        } catch (FeignException ex) {
-            throw new ApiException("Payment Failed", HttpStatus.BAD_GATEWAY);
-        }
-    }
 }
