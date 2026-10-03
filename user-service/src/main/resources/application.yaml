@@ -25,17 +25,17 @@ spring:
             client-secret: ${CLIENT_SECRET}
             scope: openid, profile, email
             # Must go through the gateway with localhost — Google rejects private LAN IPs (10.x/192.168.x)
-            redirect-uri: "http://localhost:8080/login/oauth2/code/{registrationId}"
+            redirect-uri: "${GATEWAY_URL:http://localhost:8080}/login/oauth2/code/{registrationId}"
           github:
             client-id: ${GH_CLIENT_ID}
             client-secret: ${GH_CLIENT_SECRET}
             scope: read:user, user:email
-            redirect-uri: "http://localhost:8080/login/oauth2/code/{registrationId}"
+            redirect-uri: "${GATEWAY_URL:http://localhost:8080}/login/oauth2/code/{registrationId}"
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
 
 management:
   endpoints:
@@ -60,7 +60,7 @@ server:
   port: 8081
 
 app:
-  gateway-base-url: http://localhost:8080
+  gateway-base-url: ${GATEWAY_URL:http://localhost:8080}
   jwt:
     secret: ${JWT_SECRET}
     access-token-expiry: 900
